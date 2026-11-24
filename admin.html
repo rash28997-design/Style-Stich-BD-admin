@@ -1,0 +1,1396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Style &amp; Stich BD — Admin Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+
+<style>
+  :root {
+    --ink: #0f1115; --text: #1c1f26; --muted: #6b7280; --border: #e8e2d8;
+    --bg: #ffffff; --soft: #f8f6f2; --gold: #c89b4b; --gold-dark: #9c7228;
+    --gold-light: #f5e6c4; --blue: #2563eb; --blue-soft: #eff6ff;
+    --green: #059669; --green-soft: #ecfdf5; --red: #dc2626; --red-soft: #fef2f2;
+    --amber: #d97706; --amber-soft: #fffbeb; --violet: #7c3aed; --violet-soft: #f5f3ff;
+    --cyan: #0891b2; --cyan-soft: #ecfeff;
+    --radius: 16px; --shadow: 0 4px 18px rgba(17,19,24,0.06);
+    --shadow-lg: 0 20px 45px rgba(17,19,24,0.14);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+
+  .login-screen { position: fixed; inset: 0; z-index: 100;
+    background: radial-gradient(1200px 600px at 10% -10%, #fff7e6 0%, transparent 60%),
+      radial-gradient(900px 500px at 110% 20%, #eef6ff 0%, transparent 55%), #ffffff;
+    display: flex; align-items: center; justify-content: center; padding: 24px; }
+  .login-card { width: 100%; max-width: 420px; background: #fff; border: 1px solid var(--border); border-radius: 24px; padding: 36px 28px 30px; box-shadow: var(--shadow-lg); position: relative; overflow: hidden; }
+  .login-card::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--gold), #f0c060, var(--gold-dark)); }
+  .login-brand { display: flex; flex-direction: column; align-items: center; text-align: center; margin-bottom: 26px; }
+  .login-logo { width: 68px; height: 68px; border-radius: 20px; background: linear-gradient(135deg, var(--gold), #fff3d6, var(--gold-dark)); padding: 3px; margin-bottom: 14px; }
+  .login-logo img { width: 100%; height: 100%; border-radius: 17px; object-fit: cover; background: #fff; }
+  .login-brand h1 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 28px; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+  .login-brand p { font-size: 12px; color: var(--muted); font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
+
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display: block; font-size: 12px; font-weight: 700; color: var(--ink); margin-bottom: 6px; letter-spacing: 0.2px; }
+  .form-input { width: 100%; padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px; font-family: inherit; font-size: 14px; color: var(--ink); background: #fff; outline: none; transition: all 0.15s; }
+  .form-input:focus { border-color: var(--gold); box-shadow: 0 0 0 4px rgba(200,155,75,0.12); }
+  .form-input::placeholder { color: #b6bdc9; }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 18px; border: none; border-radius: 12px; font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+  .btn-primary { background: linear-gradient(135deg, var(--ink), #2a3140); color: #fff; }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(17,19,24,0.22); }
+  .btn-gold { background: linear-gradient(135deg, var(--gold-dark), var(--gold)); color: #fff; }
+  .btn-gold:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(200,155,75,0.4); }
+  .btn-outline { background: #fff; border: 1px solid var(--border); color: var(--ink); }
+  .btn-outline:hover { background: var(--soft); border-color: var(--gold); }
+  .btn-danger { background: var(--red); color: #fff; }
+  .btn-danger:hover { background: #b91c1c; }
+  .btn-success { background: var(--green); color: #fff; }
+  .btn-success:hover { background: #047857; }
+  .btn-sm { padding: 7px 12px; font-size: 12px; border-radius: 9px; }
+  .btn-full { width: 100%; }
+  .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none !important; }
+
+  .login-error { display: none; margin-bottom: 14px; padding: 10px 12px; background: var(--red-soft); border: 1px solid #fecaca; border-radius: 10px; color: var(--red); font-size: 12.5px; font-weight: 600; }
+  .login-error.show { display: block; }
+  .login-footer { text-align: center; font-size: 11px; color: var(--muted); margin-top: 18px; }
+
+  .admin-app { display: none; min-height: 100vh; }
+  .admin-app.active { display: block; }
+
+  .topbar { position: sticky; top: 0; z-index: 40; background: rgba(255,255,255,0.97); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); padding: 12px 18px; display: flex; align-items: center; gap: 14px; }
+  .menu-toggle { width: 42px; height: 42px; border-radius: 12px; border: 1px solid var(--border); background: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.15s; }
+  .menu-toggle:hover { border-color: var(--gold); background: var(--soft); }
+  .topbar-title { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 22px; font-weight: 700; color: var(--ink); flex: 1; }
+  .topbar-right { display: flex; align-items: center; gap: 10px; }
+  .user-chip { display: flex; align-items: center; gap: 10px; padding: 6px 12px 6px 6px; border-radius: 999px; background: var(--soft); border: 1px solid var(--border); }
+  .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, var(--gold), var(--gold-dark)); color: #fff; font-weight: 800; font-size: 13px; display: flex; align-items: center; justify-content: center; }
+  .user-email { font-size: 12px; font-weight: 700; color: var(--ink); max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .sidebar-backdrop { position: fixed; inset: 0; background: rgba(17,19,24,0.5); z-index: 80; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
+  .sidebar-backdrop.show { opacity: 1; pointer-events: auto; }
+  .sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 300px; max-width: 85vw; background: #fff; border-right: 1px solid var(--border); z-index: 90; transform: translateX(-102%); transition: transform 0.3s cubic-bezier(0.22,1,0.36,1); display: flex; flex-direction: column; box-shadow: 20px 0 50px rgba(17,19,24,0.18); overflow-y: auto; }
+  .sidebar.show { transform: translateX(0); }
+  .sidebar-head { padding: 22px 20px 18px; background: linear-gradient(135deg, #111318 0%, #232836 100%); color: #fff; border-bottom: 3px solid var(--gold); display: flex; align-items: center; gap: 14px; }
+  .sidebar-logo { width: 48px; height: 48px; border-radius: 14px; background: linear-gradient(135deg, var(--gold), #fff3d6); padding: 2.5px; flex-shrink: 0; }
+  .sidebar-logo img { width: 100%; height: 100%; border-radius: 12px; object-fit: cover; background: #fff; }
+  .sidebar-brand h3 { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 700; }
+  .sidebar-brand p { font-size: 10.5px; color: var(--gold-light); text-transform: uppercase; letter-spacing: 0.6px; }
+  .sidebar-nav { padding: 12px; flex: 1; }
+  .nav-item { display: flex; align-items: center; gap: 13px; padding: 12px 14px; border-radius: 12px; font-size: 13.5px; font-weight: 700; color: var(--text); cursor: pointer; transition: all 0.15s; margin-bottom: 2px; border: 1px solid transparent; }
+  .nav-item:hover { background: var(--soft); }
+  .nav-item.active { background: linear-gradient(135deg, #111318 0%, #232836 100%); color: var(--gold-light); border-color: var(--gold); box-shadow: 0 6px 16px rgba(17,19,24,0.18); }
+  .nav-item.active .nav-icon { color: var(--gold-light); }
+  .nav-icon { width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; color: var(--gold-dark); flex-shrink: 0; }
+  .nav-icon svg { width: 20px; height: 20px; }
+  .nav-item .nav-badge { margin-left: auto; font-size: 10.5px; font-weight: 800; padding: 2px 8px; border-radius: 999px; background: var(--red); color: #fff; }
+  .sidebar-foot { padding: 14px; border-top: 1px solid var(--border); }
+  .sidebar-foot .btn { width: 100%; }
+
+  .content { padding: 22px 18px 60px; max-width: 1400px; margin: 0 auto; }
+  .page-section { display: none; animation: fadeUp 0.25s ease; }
+  .page-section.active { display: block; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  .page-head { margin-bottom: 20px; }
+  .page-head h2 { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+  .page-head p { font-size: 13px; color: var(--muted); font-weight: 500; }
+
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 26px; }
+  .stat-card { background: #fff; border: 1px solid var(--border); border-radius: 18px; padding: 20px 18px; position: relative; overflow: hidden; transition: all 0.2s; box-shadow: var(--shadow); }
+  .stat-card:hover { transform: translateY(-3px); box-shadow: 0 14px 30px rgba(17,19,24,0.1); }
+  .stat-card::before { content: ""; position: absolute; top: 0; left: 0; width: 4px; height: 100%; }
+  .stat-card.c-blue::before { background: var(--blue); }
+  .stat-card.c-cyan::before { background: var(--cyan); }
+  .stat-card.c-amber::before { background: var(--amber); }
+  .stat-card.c-violet::before { background: var(--violet); }
+  .stat-card.c-green::before { background: var(--green); }
+  .stat-card.c-red::before { background: var(--red); }
+  .stat-icon { width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
+  .stat-icon svg { width: 22px; height: 22px; }
+  .stat-card.c-blue .stat-icon { background: var(--blue-soft); color: var(--blue); }
+  .stat-card.c-cyan .stat-icon { background: var(--cyan-soft); color: var(--cyan); }
+  .stat-card.c-amber .stat-icon { background: var(--amber-soft); color: var(--amber); }
+  .stat-card.c-violet .stat-icon { background: var(--violet-soft); color: var(--violet); }
+  .stat-card.c-green .stat-icon { background: var(--green-soft); color: var(--green); }
+  .stat-card.c-red .stat-icon { background: var(--red-soft); color: var(--red); }
+  .stat-label { font-size: 11.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px; }
+  .stat-value { font-size: 30px; font-weight: 800; color: var(--ink); line-height: 1; }
+  .stat-sub { font-size: 11.5px; color: var(--muted); margin-top: 6px; font-weight: 500; }
+
+  .panel { background: #fff; border: 1px solid var(--border); border-radius: 18px; box-shadow: var(--shadow); overflow: hidden; margin-bottom: 18px; }
+  .panel-head { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .panel-head h3 { font-size: 16px; font-weight: 800; color: var(--ink); }
+  .panel-head .hint { font-size: 12px; color: var(--muted); font-weight: 500; }
+  .panel-body { padding: 20px; }
+
+  .table-wrap { overflow-x: auto; }
+  table.sheet { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 720px; }
+  table.sheet th { background: #faf8f4; padding: 12px 14px; text-align: left; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--ink); border-bottom: 1px solid var(--border); white-space: nowrap; }
+  table.sheet td { padding: 12px 14px; border-bottom: 1px solid #f2eee6; vertical-align: middle; }
+  table.sheet tbody tr:hover { background: #fdfcf9; }
+  table.sheet tbody tr:last-child td { border-bottom: none; }
+  .tbl-empty { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 13px; }
+
+  .thumb { width: 42px; height: 46px; border-radius: 8px; object-fit: cover; object-position: top center; background: var(--soft); border: 1px solid var(--border); }
+  .cell-name { font-weight: 700; color: var(--ink); }
+  .cell-sub { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+  .copy-mini { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 6px; background: var(--blue-soft); color: var(--blue); font-size: 10.5px; font-weight: 700; cursor: pointer; border: none; font-family: inherit; }
+  .copy-mini:hover { background: #dbeafe; }
+
+  .badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+  .badge-pending { background: var(--amber-soft); color: var(--amber); }
+  .badge-approved { background: var(--green-soft); color: var(--green); }
+  .badge-rejected { background: var(--red-soft); color: var(--red); }
+  .badge-cat { background: var(--soft); color: var(--text); border: 1px solid var(--border); }
+
+  .action-cell { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-grid .full { grid-column: 1 / -1; }
+  textarea.form-input { resize: vertical; min-height: 80px; }
+  .upload-box { border: 2px dashed var(--border); border-radius: 14px; padding: 22px 16px; text-align: center; cursor: pointer; transition: all 0.15s; background: #fdfcf9; }
+  .upload-box:hover { border-color: var(--gold); background: var(--soft); }
+  .upload-box .up-icon { width: 48px; height: 48px; border-radius: 14px; background: var(--gold-light); color: var(--gold-dark); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 10px; }
+  .upload-box .up-icon svg { width: 24px; height: 24px; }
+  .upload-box p { font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 3px; }
+  .upload-box span { font-size: 11.5px; color: var(--muted); }
+  .img-preview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 10px; margin-top: 14px; }
+  .img-preview { position: relative; aspect-ratio: 4/4.4; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); background: var(--soft); }
+  .img-preview img { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
+  .img-remove { position: absolute; top: 5px; right: 5px; width: 22px; height: 22px; border-radius: 50%; background: rgba(220,38,38,0.95); color: #fff; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; line-height: 1; }
+  .img-remove:hover { background: var(--red); }
+  .upload-progress { height: 4px; background: var(--soft); border-radius: 4px; overflow: hidden; margin-top: 10px; display: none; }
+  .upload-progress.show { display: block; }
+  .upload-progress > div { height: 100%; background: var(--gold); width: 0%; transition: width 0.2s; }
+
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(17,19,24,0.55); z-index: 150; display: none; align-items: center; justify-content: center; padding: 16px; }
+  .modal-backdrop.show { display: flex; }
+  .modal { background: #fff; border-radius: 20px; width: 100%; max-width: 620px; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow-lg); animation: modalIn 0.2s ease; }
+  @keyframes modalIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+  .modal-head { padding: 18px 22px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: #fff; z-index: 1; }
+  .modal-head h3 { font-size: 17px; font-weight: 800; color: var(--ink); }
+  .modal-close { width: 34px; height: 34px; border-radius: 10px; background: var(--soft); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--ink); }
+  .modal-close:hover { background: #fee2e2; color: var(--red); }
+  .modal-body { padding: 20px 22px 24px; }
+
+  .kv-row { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px dashed #efeae2; font-size: 13px; }
+  .kv-row:last-child { border-bottom: none; }
+  .kv-row .kv-k { width: 130px; font-weight: 700; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.3px; flex-shrink: 0; }
+  .kv-row .kv-v { flex: 1; color: var(--text); font-weight: 600; word-break: break-word; }
+
+  .order-items-list { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
+  .order-item-mini { display: flex; gap: 10px; align-items: center; background: var(--soft); border: 1px solid var(--border); padding: 8px 10px; border-radius: 10px; }
+  .order-item-mini img { width: 42px; height: 46px; border-radius: 7px; object-fit: cover; object-position: top center; }
+  .order-item-mini .oim-title { font-size: 12.5px; font-weight: 700; color: var(--ink); }
+  .order-item-mini .oim-meta { font-size: 11px; color: var(--muted); }
+
+  .toast { position: fixed; top: 20px; right: 20px; z-index: 300; background: var(--ink); color: #fff; padding: 11px 18px; border-radius: 12px; font-size: 13px; font-weight: 600; box-shadow: 0 14px 30px rgba(17,19,24,0.3); transform: translateX(120%); transition: transform 0.3s cubic-bezier(0.22,1,0.36,1); max-width: 340px; }
+  .toast.show { transform: translateX(0); }
+  .toast.toast-ok { background: var(--green); }
+  .toast.toast-err { background: var(--red); }
+
+  .loading-block { display: flex; align-items: center; justify-content: center; padding: 40px; color: var(--muted); font-size: 13px; gap: 10px; }
+  .spinner { width: 18px; height: 18px; border-radius: 50%; border: 2.5px solid var(--border); border-top-color: var(--gold); animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .select-mini { padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border); font-family: inherit; font-size: 13px; font-weight: 600; background: #fff; color: var(--ink); cursor: pointer; outline: none; }
+  .select-mini:focus { border-color: var(--gold); }
+
+  .user-search-wrap { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .user-search-wrap input { padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border); font-family: inherit; font-size: 13px; min-width: 220px; }
+  .user-search-wrap input:focus { outline: none; border-color: var(--gold); }
+
+  .user-profile-head { display: flex; gap: 14px; align-items: center; margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+  .user-profile-avatar { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, var(--gold), var(--gold-dark)); color: #fff; font-weight: 800; font-size: 24px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; }
+  .user-profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .user-profile-head .uph-name { font-size: 18px; font-weight: 800; color: var(--ink); }
+  .user-profile-head .uph-sub { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
+
+  @media (max-width: 720px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .user-email { display: none; }
+    .content { padding: 16px 12px 60px; }
+    .stat-value { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <div class="login-brand">
+      <div class="login-logo">
+        <img src="https://i.ibb.co.com/YTXRL2fT/file-000000005838820ba5db4496221a9716.png" alt="Style & Stich BD"
+             onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%23111318%22/><text x=%2250%22 y=%2258%22 text-anchor=%22middle%22 fill=%22%23c89b4b%22 font-size=%2230%22 font-family=%22Georgia%22 font-weight=%22bold%22>S%26S</text></svg>';">
+      </div>
+      <h1>Admin Console</h1>
+      <p>Style &amp; Stich BD</p>
+    </div>
+
+    <div class="login-error" id="loginError"></div>
+
+    <form id="loginForm" onsubmit="handleAdminLogin(event)">
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" id="adminEmail" class="form-input" required placeholder="admin@example.com" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="adminPassword" class="form-input" required placeholder="Enter your password" autocomplete="current-password" minlength="6">
+      </div>
+      <button type="submit" class="btn btn-primary btn-full" id="loginBtn">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+          <polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>
+        </svg>
+        Secure Sign In
+      </button>
+    </form>
+
+    <p class="login-footer">Protected by Firebase Authentication</p>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="admin-app" id="adminApp">
+  <header class="topbar">
+    <button class="menu-toggle" onclick="toggleSidebar(true)" aria-label="Open menu">
+      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+        <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+      </svg>
+    </button>
+    <div class="topbar-title">Admin Console</div>
+    <div class="topbar-right">
+      <div class="user-chip">
+        <div class="user-avatar" id="topbarAvatar">A</div>
+        <span class="user-email" id="topbarEmail">admin@style</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar(false)"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-head">
+      <div class="sidebar-logo">
+        <img src="https://i.ibb.co.com/YTXRL2fT/file-000000005838820ba5db4496221a9716.png" alt="Logo"
+             onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%23111318%22/><text x=%2250%22 y=%2258%22 text-anchor=%22middle%22 fill=%22%23c89b4b%22 font-size=%2230%22 font-family=%22Georgia%22 font-weight=%22bold%22>S%26S</text></svg>';">
+      </div>
+      <div class="sidebar-brand">
+        <h3>Style &amp; Stich BD</h3>
+        <p>Admin Panel</p>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-item active" data-page="dashboard" onclick="switchPage('dashboard')">
+        <span class="nav-icon"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></span>
+        Dashboard
+      </div>
+
+      <div class="nav-item" data-page="add-product" onclick="switchPage('add-product')">
+        <span class="nav-icon"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 7h-9M14 17H5M17 3v8M7 13v8"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg></span>
+        Add Product
+      </div>
+
+      <div class="nav-item" data-page="product-history" onclick="switchPage('product-history')">
+        <span class="nav-icon"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></span>
+        Product History
+      </div>
+
+      <div class="nav-item" data-page="pending-orders" onclick="switchPage('pending-orders')">
+        <span class="nav-icon"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16"/><circle cx="15" cy="15" r="1.5"/></svg></span>
+        Pending Orders
+        <span class="nav-badge" id="sidebarPendingBadge" style="display:none;">0</span>
+      </div>
+
+      <div class="nav-item" data-page="total-users" onclick="switchPage('total-users')">
+        <span class="nav-icon"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+        Total Users
+      </div>
+
+      <div class="nav-item" data-page="all-orders" onclick="switchPage('all-orders')">
+        <span class="nav-icon"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h8"/><path d="M16 19l2 2 4-4"/></svg></span>
+        All Orders
+      </div>
+    </nav>
+
+    <div class="sidebar-foot">
+      <button class="btn btn-outline" onclick="handleAdminLogout()">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+          <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+        Sign Out
+      </button>
+    </div>
+  </aside>
+
+  <main class="content">
+    <!-- Dashboard -->
+    <section class="page-section active" id="page-dashboard">
+      <div class="page-head">
+        <h2>Dashboard Overview</h2>
+        <p>Real-time metrics across your entire store</p>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card c-blue">
+          <div class="stat-icon"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg></div>
+          <div class="stat-label">Total User Accounts</div>
+          <div class="stat-value" id="statTotalUsers">0</div>
+          <div class="stat-sub">All registered users (DB + Auth)</div>
+        </div>
+
+        <div class="stat-card c-cyan">
+          <div class="stat-icon"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 11h-6M19 8v6"/></svg></div>
+          <div class="stat-label">Profiles in DB</div>
+          <div class="stat-value" id="statCreatedUsers">0</div>
+          <div class="stat-sub">users/ node এ সেভ করা</div>
+        </div>
+
+        <div class="stat-card c-amber">
+          <div class="stat-icon"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+          <div class="stat-label">Pending Orders</div>
+          <div class="stat-value" id="statPendingOrders">0</div>
+          <div class="stat-sub">Awaiting review</div>
+        </div>
+
+        <div class="stat-card c-violet">
+          <div class="stat-icon"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></div>
+          <div class="stat-label">Total Products</div>
+          <div class="stat-value" id="statTotalProducts">0</div>
+          <div class="stat-sub">In catalog</div>
+        </div>
+
+        <div class="stat-card c-green">
+          <div class="stat-icon"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+          <div class="stat-label">Approved Orders</div>
+          <div class="stat-value" id="statApprovedOrders">0</div>
+          <div class="stat-sub">Confirmed &amp; in progress</div>
+        </div>
+
+        <div class="stat-card c-red">
+          <div class="stat-icon"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div>
+          <div class="stat-label">Rejected Orders</div>
+          <div class="stat-value" id="statRejectedOrders">0</div>
+          <div class="stat-sub">Cancelled / rejected</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h3>Recent Pending Orders</h3>
+          <span class="hint">Latest 5 awaiting review</span>
+        </div>
+        <div class="table-wrap">
+          <table class="sheet">
+            <thead><tr><th>Order</th><th>Customer</th><th>Product</th><th>Total</th><th>Payment</th><th>Status</th></tr></thead>
+            <tbody id="dashRecentOrders"><tr><td colspan="6" class="tbl-empty">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Add Product -->
+    <section class="page-section" id="page-add-product">
+      <div class="page-head">
+        <h2 id="addProductTitle">Add New Product</h2>
+        <p>Fill in the details — the product will appear instantly on the user app</p>
+      </div>
+      <div class="panel">
+        <div class="panel-body">
+          <form id="productForm" onsubmit="handleSaveProduct(event)">
+            <div class="form-grid">
+              <div class="form-group full">
+                <label>Product Images (Gallery Upload — multiple allowed)</label>
+                <div class="upload-box" onclick="document.getElementById('imgInput').click()">
+                  <div class="up-icon"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
+                  <p>Click to upload from gallery</p>
+                  <span>JPG, PNG, WEBP — multiple images supported</span>
+                </div>
+                <input type="file" id="imgInput" accept="image/*" multiple style="display:none;" onchange="handleImageUpload(event)">
+                <div class="upload-progress" id="uploadProgress"><div id="uploadBar"></div></div>
+                <div class="img-preview-grid" id="imgPreviewGrid"></div>
+              </div>
+
+              <div class="form-group full">
+                <label>Image URL Backup (optional)</label>
+                <div style="display:flex; gap:8px;">
+                  <input type="url" id="imgLinkInput" class="form-input" placeholder="https://example.com/image.jpg" style="flex:1;">
+                  <button type="button" class="btn btn-outline btn-sm" onclick="addImageFromLink()">Add</button>
+                </div>
+              </div>
+
+              <div class="form-group full"><label>Product Title *</label><input type="text" id="pTitle" class="form-input" required placeholder="e.g. Royal Jacquard Cotton Panjabi"></div>
+              <div class="form-group"><label>Category *</label><input type="text" id="pCategory" class="form-input" required placeholder="e.g. Men, Women, Winter" list="catList"><datalist id="catList"></datalist></div>
+              <div class="form-group"><label>Rating (optional)</label><input type="text" id="pRating" class="form-input" placeholder="e.g. 4.9" value="5.0"></div>
+              <div class="form-group"><label>Selling Price (৳) *</label><input type="number" id="pPrice" class="form-input" required placeholder="e.g. 1550" min="0" oninput="autoCalcDiscount()"></div>
+              <div class="form-group"><label>Old Price / MRP (৳) — Optional</label><input type="number" id="pOldPrice" class="form-input" placeholder="e.g. 1950" min="0" oninput="autoCalcDiscount()"></div>
+              <div class="form-group"><label>Discount % (auto-calculated, editable)</label><input type="number" id="pDiscount" class="form-input" placeholder="e.g. 20" min="0" max="99"></div>
+              <div class="form-group"><label>Sizes (comma separated)</label><input type="text" id="pSizes" class="form-input" placeholder="M, L, XL, XXL"></div>
+              <div class="form-group full"><label>Description *</label><textarea id="pDescription" class="form-input" required placeholder="Detailed product description…"></textarea></div>
+            </div>
+            <div style="display:flex; gap:10px; margin-top:18px; flex-wrap:wrap;">
+              <button type="submit" class="btn btn-gold" id="saveProductBtn">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                <span id="saveProductLabel">Save Product</span>
+              </button>
+              <button type="button" class="btn btn-outline" onclick="resetProductForm()">Reset Form</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- Product History -->
+    <section class="page-section" id="page-product-history">
+      <div class="page-head"><h2>Product History</h2><p>All products currently live in the store</p></div>
+      <div class="panel">
+        <div class="panel-head"><h3>All Products</h3><span class="hint" id="productCountHint">0 items</span></div>
+        <div class="table-wrap">
+          <table class="sheet">
+            <thead><tr><th>Image</th><th>Title</th><th>Category</th><th>Price</th><th>Discount</th><th>Sizes</th><th>Actions</th></tr></thead>
+            <tbody id="productHistoryBody"><tr><td colspan="7" class="tbl-empty">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pending Orders -->
+    <section class="page-section" id="page-pending-orders">
+      <div class="page-head"><h2>Pending Orders</h2><p>Filter by product and approve or reject each order</p></div>
+      <div class="panel">
+        <div class="panel-head">
+          <h3>Order Queue</h3>
+          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <select class="select-mini" id="filterProduct" onchange="renderPendingOrders()"><option value="">All Products</option></select>
+            <span class="hint" id="pendingCountHint">0 orders</span>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="sheet">
+            <thead><tr><th>Order ID</th><th>Customer</th><th>Product</th><th>Address</th><th>Payment</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="pendingOrdersBody"><tr><td colspan="8" class="tbl-empty">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Total Users (fixed) -->
+    <section class="page-section" id="page-total-users">
+      <div class="page-head">
+        <h2>Total Users</h2>
+        <p>সব রেজিস্টার্ড ইউজার — Auth + Database মিলিয়ে সম্পূর্ণ তালিকা</p>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <h3>Registered Accounts</h3>
+          <div class="user-search-wrap">
+            <input type="text" id="userSearch" placeholder="Search by name/email/phone/uid…" oninput="renderUsers()">
+            <select class="select-mini" id="userProviderFilter" onchange="renderUsers()">
+              <option value="">All Providers</option>
+              <option value="password">Email/Password</option>
+              <option value="google">Google</option>
+              <option value="phone">Phone</option>
+              <option value="facebook">Facebook</option>
+            </select>
+            <button class="btn btn-outline btn-sm" onclick="syncAuthUsersToDB()">Sync Auth → DB</button>
+            <span class="hint" id="userCountHint">0 users</span>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="sheet">
+            <thead>
+              <tr>
+                <th>Avatar</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Provider</th>
+                <th>Orders</th>
+                <th>Created</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="usersBody"><tr><td colspan="8" class="tbl-empty">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- All Orders -->
+    <section class="page-section" id="page-all-orders">
+      <div class="page-head"><h2>All Orders</h2><p>Complete order history with every status</p></div>
+      <div class="panel">
+        <div class="panel-head"><h3>Master Order Log</h3><span class="hint" id="allOrdersHint">0 orders</span></div>
+        <div class="table-wrap">
+          <table class="sheet">
+            <thead><tr><th>Order ID</th><th>Customer</th><th>Products</th><th>Total</th><th>Payment</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="allOrdersBody"><tr><td colspan="7" class="tbl-empty">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- Modal -->
+<div class="modal-backdrop" id="modalBackdrop" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modalBox">
+    <div class="modal-head">
+      <h3 id="modalTitle">Details</h3>
+      <button class="modal-close" onclick="closeModal()">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  /* ============ Firebase ============ */
+  const firebaseConfig = {
+    apiKey: "AIzaSyDUX4q4T21RbBDgHCyozwmvhhZaPRiMcqE",
+    authDomain: "profationstore-fbee2.firebaseapp.com",
+    databaseURL: "https://profationstore-fbee2-default-rtdb.firebaseio.com",
+    projectId: "profationstore-fbee2",
+    storageBucket: "profationstore-fbee2.firebasestorage.app",
+    messagingSenderId: "924565931381",
+    appId: "1:924565931381:web:eed6a30cf82ac9f330bf3c",
+    measurementId: "G-5H66WB7D3C"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.database();
+  const storage = firebase.storage();
+
+  /* ============ State ============ */
+  let currentAdmin = null;
+  let allProducts = {};
+  let allOrders = {};
+  let allUsersDB = {};
+  let allAuthUsers = {};   // Auth users cache: uid -> {email, provider, displayName, ...}
+  let uploadedImageUrls = [];
+  let editingProductKey = null;
+  let dashboardUnsub = [];
+
+  /* ============ Helpers ============ */
+  function $(id) { return document.getElementById(id); }
+  function esc(str) {
+    return String(str == null ? "" : str)
+      .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+      .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+  }
+  function showToast(msg, type) {
+    const t = $("toast");
+    t.textContent = msg;
+    t.className = "toast show" + (type === "ok" ? " toast-ok" : type === "err" ? " toast-err" : "");
+    clearTimeout(t._t);
+    t._t = setTimeout(() => t.classList.remove("show"), 3000);
+  }
+  function fmtTaka(n) { return "৳" + (Number(n) || 0).toLocaleString("en-IN"); }
+  function fmtDate(ts) {
+    if (!ts) return "—";
+    try { return new Date(Number(ts)).toLocaleString("en-BD", { dateStyle: "medium", timeStyle: "short" }); }
+    catch { return String(ts); }
+  }
+
+  async function copyText(text) {
+    try {
+      if (navigator.clipboard) { await navigator.clipboard.writeText(text); showToast("Copied: " + text, "ok"); }
+      else fallbackCopy(text);
+    } catch { fallbackCopy(text); }
+  }
+  function fallbackCopy(text) {
+    const ta = document.createElement("textarea");
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); showToast("Copied: " + text, "ok"); } catch { showToast("Copy failed", "err"); }
+    document.body.removeChild(ta);
+  }
+
+  function openModal(title, html) {
+    $("modalTitle").textContent = title;
+    $("modalBody").innerHTML = html;
+    $("modalBackdrop").classList.add("show");
+  }
+  function closeModal() { $("modalBackdrop").classList.remove("show"); }
+
+  function toggleSidebar(show) {
+    $("sidebar").classList.toggle("show", !!show);
+    $("sidebarBackdrop").classList.toggle("show", !!show);
+  }
+
+  /* ============ Login ============ */
+  $("loginForm").addEventListener("submit", handleAdminLogin);
+  async function handleAdminLogin(e) {
+    e.preventDefault();
+    const email = $("adminEmail").value.trim();
+    const pass = $("adminPassword").value;
+    const errEl = $("loginError"); errEl.classList.remove("show");
+    const btn = $("loginBtn"); btn.disabled = true;
+    try { await auth.signInWithEmailAndPassword(email, pass); }
+    catch (err) {
+      errEl.textContent = friendlyAuthError(err.code);
+      errEl.classList.add("show");
+      btn.disabled = false;
+    }
+  }
+  function friendlyAuthError(code) {
+    switch (code) {
+      case "auth/invalid-email": return "Invalid email address format.";
+      case "auth/user-not-found": return "No admin account found with this email.";
+      case "auth/wrong-password": return "Incorrect password. Please try again.";
+      case "auth/invalid-credential": return "Invalid email or password.";
+      case "auth/too-many-requests": return "Too many attempts. Please wait and try again.";
+      case "auth/network-request-failed": return "Network error. Check your connection.";
+      default: return "Login failed: " + (code || "unknown error");
+    }
+  }
+  async function handleAdminLogout() { toggleSidebar(false); try { await auth.signOut(); } catch {} }
+
+  /* ============ Auth state ============ */
+  auth.onAuthStateChanged(async user => {
+    if (user) {
+      currentAdmin = user;
+      $("topbarEmail").textContent = user.email || user.phoneNumber || "admin";
+      $("topbarAvatar").textContent = ((user.email || "A").charAt(0) || "A").toUpperCase();
+      $("loginScreen").style.display = "none";
+      $("adminApp").classList.add("active");
+      startRealtimeListeners();
+      // Attach current user into allAuthUsers cache
+      allAuthUsers[user.uid] = {
+        uid: user.uid,
+        email: user.email || "",
+        displayName: user.displayName || "",
+        photoURL: user.photoURL || "",
+        provider: (user.providerData && user.providerData[0] && user.providerData[0].providerId) || "password"
+      };
+      renderUsers();
+    } else {
+      currentAdmin = null;
+      $("adminApp").classList.remove("active");
+      $("loginScreen").style.display = "flex";
+      $("loginBtn").disabled = false;
+      stopRealtimeListeners();
+      allUsersDB = {}; allAuthUsers = {};
+    }
+  });
+
+  /* ============ Realtime listeners ============ */
+  function startRealtimeListeners() {
+    stopRealtimeListeners();
+
+    const pRef = db.ref("products");
+    const pHandler = pRef.on("value", snap => {
+      allProducts = snap.val() || {};
+      renderProductHistory(); updateStats(); refreshCategoryOptions(); populateProductFilter();
+    }, err => { console.error(err); showToast("Products load error: " + err.message, "err"); });
+    dashboardUnsub.push(() => pRef.off("value", pHandler));
+
+    const oRef = db.ref("orders");
+    const oHandler = oRef.on("value", snap => {
+      allOrders = snap.val() || {};
+      renderPendingOrders(); renderAllOrders(); renderDashboardRecentOrders(); updateStats(); renderUsers();
+    }, err => { console.error(err); showToast("Orders load error: " + err.message, "err"); });
+    dashboardUnsub.push(() => oRef.off("value", oHandler));
+
+    const uRef = db.ref("users");
+    const uHandler = uRef.on("value", snap => {
+      allUsersDB = snap.val() || {};
+      renderUsers(); updateStats();
+    }, err => console.warn("Users node:", err.message));
+    dashboardUnsub.push(() => uRef.off("value", uHandler));
+  }
+  function stopRealtimeListeners() {
+    dashboardUnsub.forEach(fn => { try { fn(); } catch {} });
+    dashboardUnsub = [];
+  }
+
+  /* ============ Sidebar / page switching ============ */
+  function switchPage(page) {
+    document.querySelectorAll(".page-section").forEach(p => p.classList.remove("active"));
+    const el = $("page-" + page);
+    if (el) el.classList.add("active");
+    document.querySelectorAll(".nav-item").forEach(n => n.classList.toggle("active", n.dataset.page === page));
+    toggleSidebar(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  /* ============ Stats ============ */
+  function updateStats() {
+    const products = Object.values(allProducts);
+    const orders = Object.values(allOrders);
+
+    // Total users = unique union of DB node keys + Auth cache
+    const dbCount = Object.keys(allUsersDB).length;
+    const authCount = Object.keys(allAuthUsers).length;
+    // Build a merged unique count by uid/email/phone-ish key
+    const uniqueSet = new Set();
+    Object.entries(allUsersDB).forEach(([k, u]) => {
+      if (u && u.uid) uniqueSet.add("uid:" + u.uid);
+      else if (u && u.email) uniqueSet.add("em:" + u.email.toLowerCase());
+      else if (u && u.phone) uniqueSet.add("ph:" + u.phone);
+      else uniqueSet.add("db:" + k);
+    });
+    Object.entries(allAuthUsers).forEach(([uid, u]) => {
+      if (uid) uniqueSet.add("uid:" + uid);
+      else if (u && u.email) uniqueSet.add("em:" + u.email.toLowerCase());
+    });
+    const totalUniqueUsers = uniqueSet.size;
+
+    const pending = orders.filter(o => (o.status || "Pending") === "Pending").length;
+    const approved = orders.filter(o => ["Approved","Confirmed","Packing","Delivery","Delivered"].includes(o.status)).length;
+    const rejected = orders.filter(o => o.status === "Rejected").length;
+
+    $("statTotalUsers").textContent = totalUniqueUsers;
+    $("statCreatedUsers").textContent = dbCount;
+    $("statPendingOrders").textContent = pending;
+    $("statTotalProducts").textContent = products.length;
+    $("statApprovedOrders").textContent = approved;
+    $("statRejectedOrders").textContent = rejected;
+
+    const badge = $("sidebarPendingBadge");
+    if (pending > 0) { badge.style.display = "inline-block"; badge.textContent = pending; }
+    else badge.style.display = "none";
+  }
+
+  /* ============ Dashboard recent orders ============ */
+  function renderDashboardRecentOrders() {
+    const orders = Object.entries(allOrders)
+      .filter(([k, o]) => (o.status || "Pending") === "Pending")
+      .sort((a, b) => (b[1].createdAt || 0) - (a[1].createdAt || 0))
+      .slice(0, 5);
+    const tbody = $("dashRecentOrders");
+    if (!orders.length) { tbody.innerHTML = '<tr><td colspan="6" class="tbl-empty">No pending orders yet — you are all caught up.</td></tr>'; return; }
+    tbody.innerHTML = orders.map(([k, o]) => {
+      const firstItem = (o.items && o.items[0]) || {};
+      return `<tr>
+        <td><span class="cell-name">${esc(o.orderId || k)}</span></td>
+        <td><div class="cell-name">${esc(o.customerName || "-")}</div><div class="cell-sub">${esc(o.customerPhone || "")}</div></td>
+        <td>${esc(firstItem.name || "-")}${o.items && o.items.length > 1 ? ` <span class="cell-sub">+${o.items.length-1} more</span>` : ""}</td>
+        <td><b>${fmtTaka(o.total)}</b></td>
+        <td>${esc(o.paymentMethod || "COD")}</td>
+        <td><span class="badge badge-pending">Pending</span></td>
+      </tr>`;
+    }).join("");
+  }
+
+  /* ============ Product form ============ */
+  function autoCalcDiscount() {
+    const p = parseFloat($("pPrice").value) || 0;
+    const op = parseFloat($("pOldPrice").value) || 0;
+    if (op > 0 && p > 0 && op > p) {
+      const disc = Math.round(((op - p) / op) * 100);
+      $("pDiscount").value = disc;
+    }
+  }
+
+  async function handleImageUpload(e) {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    const progWrap = $("uploadProgress"), progBar = $("uploadBar");
+    progWrap.classList.add("show"); progBar.style.width = "0%";
+    let done = 0;
+    for (const file of files) {
+      try {
+        const path = `products/${Date.now()}_${Math.random().toString(36).slice(2)}_${file.name}`;
+        const ref = storage.ref(path);
+        const task = ref.put(file);
+        await new Promise((resolve, reject) => {
+          task.on("state_changed",
+            snap => {
+              const base = (done / files.length) * 100;
+              const local = (snap.bytesTransferred / snap.totalBytes) * (100 / files.length);
+              progBar.style.width = Math.min(100, base + local) + "%";
+            }, reject, resolve
+          );
+        });
+        const url = await ref.getDownloadURL();
+        uploadedImageUrls.push(url);
+        renderImagePreviews();
+      } catch (err) { console.error(err); showToast("Upload failed: " + err.message, "err"); }
+      done++;
+    }
+    $("imgInput").value = "";
+    progBar.style.width = "100%";
+    setTimeout(() => { progWrap.classList.remove("show"); progBar.style.width = "0%"; }, 500);
+  }
+
+  function renderImagePreviews() {
+    const grid = $("imgPreviewGrid");
+    grid.innerHTML = uploadedImageUrls.map((url, i) => `
+      <div class="img-preview">
+        <img src="${esc(url)}" alt="preview" onerror="this.style.display='none'">
+        <button type="button" class="img-remove" onclick="removePreviewImage(${i})">×</button>
+      </div>`).join("");
+  }
+  function removePreviewImage(idx) { uploadedImageUrls.splice(idx, 1); renderImagePreviews(); }
+
+  function addImageFromLink() {
+    const input = $("imgLinkInput");
+    const url = input.value.trim();
+    if (!url) { showToast("Please paste an image URL first", "err"); return; }
+    if (!url.startsWith("http")) { showToast("URL must start with http/https", "err"); return; }
+    if (uploadedImageUrls.includes(url)) { showToast("This link is already added", "err"); return; }
+    uploadedImageUrls.push(url); renderImagePreviews(); input.value = "";
+    showToast("Image link added", "ok");
+  }
+
+  function refreshCategoryOptions() {
+    const cats = new Set();
+    Object.values(allProducts).forEach(p => { if (p.category) cats.add(p.category); });
+    $("catList").innerHTML = Array.from(cats).map(c => `<option value="${esc(c)}">`).join("");
+  }
+
+  function resetProductForm() {
+    editingProductKey = null;
+    uploadedImageUrls = [];
+    $("productForm").reset();
+    $("pRating").value = "5.0";
+    $("imgLinkInput").value = "";
+    renderImagePreviews();
+    $("addProductTitle").textContent = "Add New Product";
+    $("saveProductLabel").textContent = "Save Product";
+  }
+
+  async function handleSaveProduct(e) {
+    e.preventDefault();
+    const title = $("pTitle").value.trim();
+    const category = $("pCategory").value.trim();
+    const price = parseFloat($("pPrice").value);
+    const oldPriceRaw = $("pOldPrice").value.trim();
+    const oldPrice = oldPriceRaw ? parseFloat(oldPriceRaw) : null;
+    const rating = $("pRating").value.trim() || "5.0";
+    const sizesRaw = $("pSizes").value.trim();
+    const description = $("pDescription").value.trim();
+
+    if (!title || !category || !price || !description) return showToast("Please fill all required fields", "err");
+    if (!uploadedImageUrls.length) return showToast("Please upload at least one product image", "err");
+
+    const sizes = sizesRaw ? sizesRaw.split(",").map(s => s.trim()).filter(Boolean) : [];
+    const btn = $("saveProductBtn"); btn.disabled = true;
+
+    try {
+      const productData = {
+        name: title, category, price, oldPrice, rating, sizes, description,
+        images: uploadedImageUrls, updatedAt: Date.now()
+      };
+      if (editingProductKey) {
+        await db.ref("products/" + editingProductKey).update(productData);
+        showToast("Product updated successfully", "ok");
+      } else {
+        productData.createdAt = Date.now();
+        await db.ref("products").push(productData);
+        showToast("Product added successfully", "ok");
+      }
+      resetProductForm(); switchPage("product-history");
+    } catch (err) { console.error(err); showToast("Save failed: " + err.message, "err"); }
+    finally { btn.disabled = false; }
+  }
+
+  /* ============ Product history ============ */
+  function renderProductHistory() {
+    const entries = Object.entries(allProducts).sort((a, b) => (b[1].createdAt || 0) - (a[1].createdAt || 0));
+    $("productCountHint").textContent = entries.length + " item" + (entries.length === 1 ? "" : "s");
+    const tbody = $("productHistoryBody");
+    if (!entries.length) { tbody.innerHTML = '<tr><td colspan="7" class="tbl-empty">No products yet.</td></tr>'; return; }
+    tbody.innerHTML = entries.map(([key, p]) => {
+      const img = (p.images && p.images[0]) || "";
+      const discount = (p.oldPrice && p.price && p.oldPrice > p.price)
+        ? Math.round(((p.oldPrice - p.price) / p.oldPrice) * 100) + "%" : "—";
+      return `<tr>
+        <td>${img ? `<img src="${esc(img)}" class="thumb" alt="" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%23f8f6f2%22/><text x=%2250%22 y=%2258%22 text-anchor=%22middle%22 fill=%22%23c89b4b%22 font-size=%2224%22 font-family=%22Georgia%22 font-weight=%22bold%22>S</text></svg>'">` : '<div class="thumb"></div>'}</td>
+        <td><div class="cell-name">${esc(p.name || "-")}</div><div class="cell-sub">${esc(p.rating || "")}★</div></td>
+        <td><span class="badge badge-cat">${esc(p.category || "-")}</span></td>
+        <td><b>${fmtTaka(p.price)}</b></td>
+        <td>${discount}</td>
+        <td>${(p.sizes || []).join(", ") || "—"}</td>
+        <td><div class="action-cell">
+          <button class="btn btn-outline btn-sm" onclick="editProduct('${key}')">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteProduct('${key}')">Delete</button>
+        </div></td>
+      </tr>`;
+    }).join("");
+  }
+
+  function editProduct(key) {
+    const p = allProducts[key];
+    if (!p) return;
+    editingProductKey = key;
+    uploadedImageUrls = Array.isArray(p.images) ? p.images.slice() : [];
+    $("pTitle").value = p.name || "";
+    $("pCategory").value = p.category || "";
+    $("pRating").value = p.rating || "5.0";
+    $("pPrice").value = p.price || "";
+    $("pOldPrice").value = p.oldPrice || "";
+    const disc = (p.oldPrice && p.price && p.oldPrice > p.price)
+      ? Math.round(((p.oldPrice - p.price) / p.oldPrice) * 100) : "";
+    $("pDiscount").value = disc;
+    $("pSizes").value = (p.sizes || []).join(", ");
+    $("pDescription").value = p.description || "";
+    renderImagePreviews();
+    $("addProductTitle").textContent = "Edit Product";
+    $("saveProductLabel").textContent = "Update Product";
+    switchPage("add-product");
+  }
+
+  async function deleteProduct(key) {
+    const p = allProducts[key];
+    if (!p) return;
+    if (!confirm(`Delete product "${p.name}"? This cannot be undone.`)) return;
+    try { await db.ref("products/" + key).remove(); showToast("Product deleted", "ok"); }
+    catch (err) { showToast("Delete failed: " + err.message, "err"); }
+  }
+
+  /* ============ Pending orders ============ */
+  function populateProductFilter() {
+    const sel = $("filterProduct");
+    const cur = sel.value;
+    const products = Object.values(allProducts);
+    const seen = new Set();
+    const opts = ['<option value="">All Products</option>'];
+    products.forEach(p => {
+      const n = p.name || "";
+      if (n && !seen.has(n)) { seen.add(n); opts.push(`<option value="${esc(n)}">${esc(n)}</option>`); }
+    });
+    sel.innerHTML = opts.join("");
+    if (cur) sel.value = cur;
+  }
+
+  function renderPendingOrders() {
+    const filter = $("filterProduct").value;
+    let entries = Object.entries(allOrders).filter(([k, o]) => (o.status || "Pending") === "Pending");
+    if (filter) entries = entries.filter(([k, o]) => (o.items || []).some(it => it.name === filter));
+    entries.sort((a, b) => (b[1].createdAt || 0) - (a[1].createdAt || 0));
+    $("pendingCountHint").textContent = entries.length + " order" + (entries.length === 1 ? "" : "s");
+    const tbody = $("pendingOrdersBody");
+    if (!entries.length) { tbody.innerHTML = '<tr><td colspan="8" class="tbl-empty">No pending orders match this filter.</td></tr>'; return; }
+    tbody.innerHTML = entries.map(([key, o]) => {
+      const firstItem = (o.items && o.items[0]) || {};
+      const extra = (o.items || []).length - 1;
+      const address = o.addressDetails
+        ? `${o.addressDetails.village || ""}, ${o.addressDetails.union || ""}, ${o.addressDetails.upazila || ""}, ${o.addressDetails.district || ""}`
+        : o.address || "-";
+      return `<tr>
+        <td><div class="cell-name">${esc(o.orderId || key)}</div><div class="cell-sub">${esc(o.date || "")}</div></td>
+        <td><div class="cell-name">${esc(o.customerName || "-")}</div><div class="cell-sub">${esc(o.customerPhone || "")}</div></td>
+        <td><div class="cell-name">${esc(firstItem.name || "-")}</div>${extra > 0 ? `<div class="cell-sub">+${extra} more item(s)</div>` : ""}<div class="cell-sub">Qty: ${(o.items || []).reduce((s, it) => s + (it.qty || 1), 0)}</div></td>
+        <td><div style="max-width:220px; font-size:12px;">${esc(address)}</div></td>
+        <td><div class="cell-name">${esc(o.paymentMethod || "COD")}</div>
+          ${o.trxId ? `<div class="cell-sub"><button class="copy-mini" onclick="copyText('${esc(o.trxId)}')">TrxID: ${esc(o.trxId)}</button></div>` : ""}
+          ${o.senderPhone ? `<div class="cell-sub">From: ${esc(o.senderPhone)}</div>` : ""}
+        </td>
+        <td><b>${fmtTaka(o.total)}</b></td>
+        <td><span class="badge badge-pending">Pending</span></td>
+        <td><div class="action-cell">
+          <button class="btn btn-outline btn-sm" onclick="viewOrder('${key}')">View</button>
+          <button class="btn btn-success btn-sm" onclick="updateOrderStatus('${key}', 'Approved')">Approve</button>
+          <button class="btn btn-danger btn-sm" onclick="updateOrderStatus('${key}', 'Rejected')">Reject</button>
+        </div></td>
+      </tr>`;
+    }).join("");
+  }
+
+  /* ============ All orders ============ */
+  function renderAllOrders() {
+    const entries = Object.entries(allOrders).sort((a, b) => (b[1].createdAt || 0) - (a[1].createdAt || 0));
+    $("allOrdersHint").textContent = entries.length + " order" + (entries.length === 1 ? "" : "s");
+    const tbody = $("allOrdersBody");
+    if (!entries.length) { tbody.innerHTML = '<tr><td colspan="7" class="tbl-empty">No orders yet.</td></tr>'; return; }
+    tbody.innerHTML = entries.map(([key, o]) => {
+      const firstItem = (o.items && o.items[0]) || {};
+      const extra = (o.items || []).length - 1;
+      const st = o.status || "Pending";
+      const badgeCls = st === "Pending" ? "badge-pending" : st === "Rejected" ? "badge-rejected" : "badge-approved";
+      return `<tr>
+        <td><div class="cell-name">${esc(o.orderId || key)}</div><div class="cell-sub">${esc(o.date || "")}</div></td>
+        <td><div class="cell-name">${esc(o.customerName || "-")}</div><div class="cell-sub">${esc(o.customerPhone || "")}</div></td>
+        <td><div class="cell-name">${esc(firstItem.name || "-")}</div>${extra > 0 ? `<div class="cell-sub">+${extra} more</div>` : ""}</td>
+        <td><b>${fmtTaka(o.total)}</b></td>
+        <td>${esc(o.paymentMethod || "COD")}${o.trxId ? `<div class="cell-sub"><button class="copy-mini" onclick="copyText('${esc(o.trxId)}')">${esc(o.trxId)}</button></div>` : ""}</td>
+        <td><span class="badge ${badgeCls}">${esc(st)}</span></td>
+        <td><div class="action-cell">
+          <button class="btn btn-outline btn-sm" onclick="viewOrder('${key}')">View</button>
+          ${st === "Pending" ? `
+            <button class="btn btn-success btn-sm" onclick="updateOrderStatus('${key}', 'Approved')">Approve</button>
+            <button class="btn btn-danger btn-sm" onclick="updateOrderStatus('${key}', 'Rejected')">Reject</button>` : ""}
+        </div></td>
+      </tr>`;
+    }).join("");
+  }
+
+  async function updateOrderStatus(key, status) {
+    if (!allOrders[key]) return;
+    if (status === "Rejected" && !confirm("Reject this order? This action is visible to the customer.")) return;
+    try {
+      await db.ref("orders/" + key + "/status").set(status);
+      showToast("Order " + status.toLowerCase(), status === "Rejected" ? "err" : "ok");
+    } catch (err) { showToast("Failed: " + err.message, "err"); }
+  }
+
+  function viewOrder(key) {
+    const o = allOrders[key];
+    if (!o) return;
+    const items = (o.items || []).map(it => `
+      <div class="order-item-mini">
+        ${it.image ? `<img src="${esc(it.image)}" alt="">` : ""}
+        <div style="flex:1;">
+          <div class="oim-title">${esc(it.name || "-")}</div>
+          <div class="oim-meta">Size: ${esc(it.size || "N/A")} • Qty: ${it.qty || 1} • ${fmtTaka(it.price)}</div>
+        </div>
+      </div>`).join("");
+    const addr = o.addressDetails || {};
+    const st = o.status || "Pending";
+    const badgeCls = st === "Pending" ? "badge-pending" : st === "Rejected" ? "badge-rejected" : "badge-approved";
+    openModal("Order Details — " + (o.orderId || key), `
+      <div style="display:flex; gap:8px; align-items:center; margin-bottom:14px;">
+        <span class="badge ${badgeCls}">${esc(st)}</span>
+        <span class="cell-sub">${esc(o.date || "")}</span>
+      </div>
+      <h4 style="font-size:13px; font-weight:800; margin:14px 0 8px;">Items</h4>
+      <div class="order-items-list">${items}</div>
+      <h4 style="font-size:13px; font-weight:800; margin:18px 0 8px;">Delivery Information</h4>
+      <div class="kv-row"><div class="kv-k">Receiver</div><div class="kv-v">${esc(o.customerName || "-")}</div></div>
+      <div class="kv-row"><div class="kv-k">Phone</div><div class="kv-v">${esc(o.customerPhone || "-")} <button class="copy-mini" onclick="copyText('${esc(o.customerPhone)}')">Copy</button></div></div>
+      <div class="kv-row"><div class="kv-k">District</div><div class="kv-v">${esc(addr.district || "-")}</div></div>
+      <div class="kv-row"><div class="kv-k">Upazila</div><div class="kv-v">${esc(addr.upazila || "-")}</div></div>
+      <div class="kv-row"><div class="kv-k">Union</div><div class="kv-v">${esc(addr.union || "-")}</div></div>
+      <div class="kv-row"><div class="kv-k">Village</div><div class="kv-v">${esc(addr.village || "-")}</div></div>
+      <h4 style="font-size:13px; font-weight:800; margin:18px 0 8px;">Payment</h4>
+      <div class="kv-row"><div class="kv-k">Method</div><div class="kv-v">${esc(o.paymentMethod || "Cash on Delivery")}</div></div>
+      ${o.trxId ? `<div class="kv-row"><div class="kv-k">TrxID</div><div class="kv-v">${esc(o.trxId)} <button class="copy-mini" onclick="copyText('${esc(o.trxId)}')">Copy</button></div></div>` : ""}
+      ${o.senderPhone ? `<div class="kv-row"><div class="kv-k">Sender No</div><div class="kv-v">${esc(o.senderPhone)} <button class="copy-mini" onclick="copyText('${esc(o.senderPhone)}')">Copy</button></div></div>` : ""}
+      <div class="kv-row"><div class="kv-k">Subtotal</div><div class="kv-v">${fmtTaka(o.subtotal)}</div></div>
+      <div class="kv-row"><div class="kv-k">Delivery Fee</div><div class="kv-v">${fmtTaka(o.deliveryFee)}</div></div>
+      <div class="kv-row"><div class="kv-k">Total</div><div class="kv-v" style="color:var(--red); font-size:15px;">${fmtTaka(o.total)}</div></div>
+      ${st === "Pending" ? `
+        <div style="display:flex; gap:10px; margin-top:18px;">
+          <button class="btn btn-success" style="flex:1;" onclick="closeModal(); updateOrderStatus('${key}', 'Approved')">Approve Order</button>
+          <button class="btn btn-danger" style="flex:1;" onclick="closeModal(); updateOrderStatus('${key}', 'Rejected')">Reject Order</button>
+        </div>` : ""}
+    `);
+  }
+
+  /* ============================================================
+     USERS  —  FIX: DB + Auth merged view with full info
+     ============================================================ */
+
+  // Build merged user list = DB profiles + Auth users (deduped)
+  function buildMergedUsers() {
+    const map = new Map(); // key -> userObj
+
+    // helper
+    function put(key, data, source) {
+      if (!key) return;
+      if (!map.has(key)) map.set(key, { ...data, _sources: new Set() });
+      else {
+        // merge non-empty fields from new source
+        const cur = map.get(key);
+        Object.keys(data).forEach(f => {
+          const v = data[f];
+          if (v !== undefined && v !== null && v !== "" && !cur[f]) cur[f] = v;
+        });
+      }
+      map.get(key)._sources.add(source);
+    }
+
+    // DB profiles
+    Object.entries(allUsersDB).forEach(([dbKey, u]) => {
+      if (!u || typeof u !== "object") return;
+      const uid = u.uid || u.userId || dbKey;
+      const userObj = {
+        key: dbKey,
+        uid: u.uid || u.userId || "",
+        name: u.name || u.fullName || u.displayName || "",
+        email: u.email || "",
+        phone: u.phone || u.phoneNumber || u.mobile || "",
+        provider: u.provider || u.authProvider || (u.email ? "password" : (u.phone ? "phone" : "")),
+        photoURL: u.photoURL || u.photo || u.avatar || "",
+        gender: u.gender || "",
+        dob: u.dob || u.birthdate || "",
+        address: u.address || u.addressDetails || "",
+        createdAt: u.createdAt || u.created_at || u.timestamp || "",
+        lastLogin: u.lastLogin || u.lastLoginAt || "",
+        raw: u
+      };
+      put("uid:" + uid, userObj, "db");
+      // also index by email/phone for cross-matching with auth
+      if (userObj.email) put("em:" + userObj.email.toLowerCase(), userObj, "db");
+      if (userObj.phone) put("ph:" + userObj.phone, userObj, "db");
+    });
+
+    // Auth users
+    Object.entries(allAuthUsers).forEach(([uid, u]) => {
+      const userObj = {
+        key: uid,
+        uid,
+        name: u.displayName || "",
+        email: u.email || "",
+        phone: u.phoneNumber || "",
+        provider: u.provider || "",
+        photoURL: u.photoURL || "",
+        createdAt: u.createdAt || "",
+        lastLogin: u.lastLogin || "",
+        raw: u
+      };
+      put("uid:" + uid, userObj, "auth");
+      if (userObj.email) put("em:" + userObj.email.toLowerCase(), userObj, "auth");
+      if (userObj.phone) put("ph:" + userObj.phone, userObj, "auth");
+    });
+
+    // Dedup by uid+email+phone (return unique list)
+    const seenUid = new Set();
+    const result = [];
+    for (const obj of map.values()) {
+      const dedupKey = (obj.uid || "") + "|" + (obj.email || "").toLowerCase() + "|" + (obj.phone || "");
+      if (seenUid.has(dedupKey)) continue;
+      seenUid.add(dedupKey);
+      result.push(obj);
+    }
+    return result;
+  }
+
+  // Render users table with search & provider filter
+  function renderUsers() {
+    const search = ($("userSearch")?.value || "").trim().toLowerCase();
+    const provFilter = $("userProviderFilter")?.value || "";
+
+    let users = buildMergedUsers();
+
+    // sort: newest first
+    users.sort((a, b) => (Number(b.createdAt) || 0) - (Number(a.createdAt) || 0));
+
+    if (provFilter) users = users.filter(u => (u.provider || "").toLowerCase() === provFilter);
+    if (search) {
+      users = users.filter(u =>
+        (u.name || "").toLowerCase().includes(search) ||
+        (u.email || "").toLowerCase().includes(search) ||
+        (u.phone || "").toLowerCase().includes(search) ||
+        (u.uid || "").toLowerCase().includes(search) ||
+        (u.key || "").toLowerCase().includes(search)
+      );
+    }
+
+    // order counts by phone OR name (fallback)
+    const orderCounts = {};
+    Object.values(allOrders).forEach(o => {
+      const id = o.customerPhone || o.customerName;
+      if (id) orderCounts[id] = (orderCounts[id] || 0) + 1;
+    });
+
+    $("userCountHint").textContent = users.length + " user" + (users.length === 1 ? "" : "s");
+    const tbody = $("usersBody");
+
+    if (!users.length) {
+      tbody.innerHTML = '<tr><td colspan="8" class="tbl-empty">কোনো ইউজার পাওয়া যায়নি। Auth→DB Sync চেষ্টা করুন অথবা Search ফিল্টার চেক করুন।</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = users.map(u => {
+      const displayName = u.name || u.displayName || u.email || u.phone || "(unnamed)";
+      const avatarLetter = (displayName || "U").charAt(0).toUpperCase();
+      const avatarImg = u.photoURL
+        ? `<img src="${esc(u.photoURL)}" alt="" onerror="this.parentElement.textContent='${esc(avatarLetter)}'">`
+        : esc(avatarLetter);
+      const orders = orderCounts[u.phone] || orderCounts[u.name] || 0;
+      const prov = u.provider || "password";
+      const hasDB = u._sources && u._sources.has("db");
+      const hasAuth = u._sources && u._sources.has("auth");
+      const sourceBadge = hasDB && hasAuth
+        ? `<span class="badge badge-approved" style="font-size:9px;">DB+Auth</span>`
+        : hasDB
+          ? `<span class="badge badge-approved" style="font-size:9px;">DB</span>`
+          : `<span class="badge badge-pending" style="font-size:9px;">Auth only</span>`;
+
+      return `<tr>
+        <td><div class="user-avatar" style="width:36px; height:36px; font-size:13px;">${avatarImg}</div></td>
+        <td><div class="cell-name">${esc(displayName)}</div><div class="cell-sub">${sourceBadge} ${hasAuth && u.uid ? "UID: " + esc((u.uid || "").slice(0, 10)) + "…" : ""}</div></td>
+        <td>${u.email ? esc(u.email) : "—"}</td>
+        <td>${u.phone ? esc(u.phone) : "—"}</td>
+        <td><span class="badge badge-cat">${esc(prov)}</span></td>
+        <td>${orders}</td>
+        <td><span class="cell-sub">${u.createdAt ? fmtDate(u.createdAt) : "—"}</span></td>
+        <td><div class="action-cell">
+          <button class="btn btn-outline btn-sm" onclick="viewUser('${esc(u.uid || u.key)}')">View</button>
+          ${hasDB ? `<button class="btn btn-outline btn-sm" onclick="editUserByKey('${esc(u.key)}')">Edit</button>` : ""}
+        </div></td>
+      </tr>`;
+    }).join("");
+  }
+
+  // View full user details
+  function viewUser(uidOrKey) {
+    const users = buildMergedUsers();
+    const u = users.find(x => x.uid === uidOrKey || x.key === uidOrKey);
+    if (!u) { showToast("User not found", "err"); return; }
+
+    // Linked orders
+    const linkedOrders = Object.entries(allOrders).filter(([k, o]) =>
+      (u.phone && o.customerPhone === u.phone) ||
+      (u.name && o.customerName === u.name)
+    );
+
+    const name = u.name || u.displayName || "(no name)";
+    const letter = (name || "U").charAt(0).toUpperCase();
+
+    const addr = u.address;
+    const addrStr = typeof addr === "object" && addr
+      ? [addr.village, addr.union, addr.upazila, addr.district].filter(Boolean).join(", ")
+      : (addr || "—");
+
+    openModal("User Details", `
+      <div class="user-profile-head">
+        <div class="user-profile-avatar">
+          ${u.photoURL ? `<img src="${esc(u.photoURL)}" alt="" onerror="this.parentElement.textContent='${esc(letter)}'">` : esc(letter)}
+        </div>
+        <div>
+          <div class="uph-name">${esc(name)}</div>
+          <div class="uph-sub">${u.email ? esc(u.email) : "No email"} ${u.phone ? " • " + esc(u.phone) : ""}</div>
+        </div>
+      </div>
+
+      <h4 style="font-size:13px; font-weight:800; margin:0 0 6px;">Account Information</h4>
+      <div class="kv-row"><div class="kv-k">UID</div><div class="kv-v">${esc(u.uid || "—")} ${u.uid ? `<button class="copy-mini" onclick="copyText('${esc(u.uid)}')">Copy</button>` : ""}</div></div>
+      <div class="kv-row"><div class="kv-k">DB Key</div><div class="kv-v">${esc(u.key || "—")}</div></div>
+      <div class="kv-row"><div class="kv-k">Email</div><div class="kv-v">${u.email ? esc(u.email) + ` <button class="copy-mini" onclick="copyText('${esc(u.email)}')">Copy</button>` : "—"}</div></div>
+      <div class="kv-row"><div class="kv-k">Phone</div><div class="kv-v">${u.phone ? esc(u.phone) + ` <button class="copy-mini" onclick="copyText('${esc(u.phone)}')">Copy</button>` : "—"}</div></div>
+      <div class="kv-row"><div class="kv-k">Provider</div><div class="kv-v">${esc(u.provider || "—")}</div></div>
+      <div class="kv-row"><div class="kv-k">Gender</div><div class="kv-v">${esc(u.gender || "—")}</div></div>
+      <div class="kv-row"><div class="kv-k">Date of Birth</div><div class="kv-v">${esc(u.dob || "—")}</div></div>
+      <div class="kv-row"><div class="kv-k">Address</div><div class="kv-v">${esc(addrStr)}</div></div>
+      <div class="kv-row"><div class="kv-k">Created</div><div class="kv-v">${u.createdAt ? fmtDate(u.createdAt) : "—"}</div></div>
+      <div class="kv-row"><div class="kv-k">Last Login</div><div class="kv-v">${u.lastLogin ? fmtDate(u.lastLogin) : "—"}</div></div>
+
+      <h4 style="font-size:13px; font-weight:800; margin:18px 0 6px;">Orders (${linkedOrders.length})</h4>
+      ${linkedOrders.length
+        ? linkedOrders.slice(0, 10).map(([k, o]) => `
+            <div class="order-item-mini" style="margin-bottom:6px;">
+              <div style="flex:1;">
+                <div class="oim-title">${esc(o.orderId || k)} — ${fmtTaka(o.total)}</div>
+                <div class="oim-meta">${esc(o.status || "Pending")} • ${esc(o.date || "")}</div>
+              </div>
+            </div>`).join("")
+        : '<div class="cell-sub" style="padding:8px 0;">No orders linked to this user.</div>'}
+
+      <h4 style="font-size:13px; font-weight:800; margin:18px 0 6px;">Raw Profile Data</h4>
+      <pre style="background:var(--soft); padding:12px; border-radius:10px; font-size:11px; overflow-x:auto; border:1px solid var(--border);">${esc(JSON.stringify(u.raw || {}, null, 2))}</pre>
+
+      <div style="display:flex; gap:10px; margin-top:18px;">
+        ${u._sources && u._sources.has("db") ? `<button class="btn btn-outline" style="flex:1;" onclick="closeModal(); editUserByKey('${esc(u.key)}')">Edit Profile</button>` : ""}
+        ${u._sources && !u._sources.has("db") ? `<button class="btn btn-gold" style="flex:1;" onclick="syncOneAuthUser('${esc(u.uid)}')">Save to DB</button>` : ""}
+      </div>
+    `);
+  }
+
+  // Edit user (by DB key)
+  function editUserByKey(key) {
+    const u = allUsersDB[key];
+    if (!u) { showToast("User profile not found in DB", "err"); return; }
+    openModal("Edit User — " + (u.name || ""), `
+      <div class="form-group"><label>Name</label><input type="text" class="form-input" id="editUserName" value="${esc(u.name || u.displayName || "")}"></div>
+      <div class="form-group"><label>Email</label><input type="text" class="form-input" id="editUserEmail" value="${esc(u.email || "")}"></div>
+      <div class="form-group"><label>Phone</label><input type="text" class="form-input" id="editUserPhone" value="${esc(u.phone || u.phoneNumber || "")}"></div>
+      <div class="form-group"><label>Gender</label><input type="text" class="form-input" id="editUserGender" value="${esc(u.gender || "")}"></div>
+      <div class="form-group"><label>Address</label><input type="text" class="form-input" id="editUserAddress" value="${esc(typeof u.address === 'string' ? u.address : "")}"></div>
+      <button class="btn btn-gold btn-full" onclick="saveUserEdit('${esc(key)}')">Save Changes</button>
+    `);
+  }
+
+  async function saveUserEdit(key) {
+    const name = $("editUserName").value.trim();
+    const email = $("editUserEmail").value.trim();
+    const phone = $("editUserPhone").value.trim();
+    const gender = $("editUserGender").value.trim();
+    const address = $("editUserAddress").value.trim();
+    try {
+      await db.ref("users/" + key).update({ name, email, phone, gender, address, updatedAt: Date.now() });
+      showToast("User updated", "ok");
+      closeModal();
+    } catch (err) { showToast("Failed: " + err.message, "err"); }
+  }
+
+  /* ============ Sync Auth users to DB (manual) ============ */
+  async function syncOneAuthUser(uid) {
+    const u = allAuthUsers[uid];
+    if (!u) return showToast("Auth user data not cached", "err");
+    const payload = {
+      uid: u.uid,
+      name: u.displayName || "",
+      email: u.email || "",
+      phone: u.phoneNumber || "",
+      photoURL: u.photoURL || "",
+      provider: u.provider || "password",
+      createdAt: u.createdAt || Date.now(),
+      lastLogin: u.lastLogin || Date.now(),
+      source: "auth-sync",
+      syncedAt: Date.now()
+    };
+    try {
+      // Check if profile already exists by uid
+      const snap = await db.ref("users").orderByChild("uid").equalTo(uid).once("value");
+      const existing = snap.val();
+      if (existing) {
+        const k = Object.keys(existing)[0];
+        await db.ref("users/" + k).update(payload);
+        showToast("Auth user merged into DB", "ok");
+      } else {
+        await db.ref("users").push(payload);
+        showToast("Auth user saved to DB", "ok");
+      }
+      closeModal();
+    } catch (err) { showToast("Sync failed: " + err.message, "err"); }
+  }
+
+  async function syncAuthUsersToDB() {
+    // Note: Firebase client SDK can't list all auth users — only current user.
+    // We persist everything we have in cache (current login + any previously stored).
+    const usersToSync = Object.keys(allAuthUsers).map(uid => allAuthUsers[uid]);
+    if (!usersToSync.length) { showToast("No auth users cached. Login with a user first.", "err"); return; }
+    let n = 0;
+    for (const u of usersToSync) {
+      try {
+        const snap = await db.ref("users").orderByChild("uid").equalTo(u.uid).once("value");
+        const exists = snap.exists();
+        const payload = {
+          uid: u.uid,
+          name: u.displayName || "",
+          email: u.email || "",
+          phone: u.phoneNumber || "",
+          photoURL: u.photoURL || "",
+          provider: u.provider || "password",
+          lastSync: Date.now(),
+          source: "auth-sync"
+        };
+        if (exists) {
+          const k = Object.keys(snap.val())[0];
+          await db.ref("users/" + k).update(payload);
+        } else {
+          payload.createdAt = Date.now();
+          await db.ref("users").push(payload);
+        }
+        n++;
+      } catch (e) { console.warn("sync", u.uid, e.message); }
+    }
+    showToast("Synced " + n + " user(s) to DB", "ok");
+  }
+
+  /* ============ Keyboard ============ */
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape") { closeModal(); toggleSidebar(false); }
+  });
+</script>
+</body>
+</html>
